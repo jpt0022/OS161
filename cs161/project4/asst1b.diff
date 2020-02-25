@@ -1,0 +1,477 @@
+diff --git a/kern/asst1/catlock.c b/kern/asst1/catlock.c
+index cd3ae6b..2cfdec2 100644
+--- a/kern/asst1/catlock.c
++++ b/kern/asst1/catlock.c
+@@ -26,6 +26,7 @@
+  *
+  */
+ 
++
+ /*
+  * Number of food bowls.
+  */
+@@ -70,15 +71,11 @@
+ 
+ static
+ void
+-catlock(void * unusedpointer, 
+-        unsigned long catnumber)
++catlock(void * unusedpointer,
++	unsigned long catnumber)
+ {
+-        /*
+-         * Avoid unused variable warnings.
+-         */
+-
+-        (void) unusedpointer;
+-        (void) catnumber;
++ //       (void) unusedpointer;
++   //     (void) catnumber;
+ }
+ 	
+ 
+@@ -103,6 +100,15 @@ void
+ mouselock(void * unusedpointer,
+           unsigned long mousenumber)
+ {
++	/*local variables*/
++	volatile bool first_mouse_eat;
++	volatile bool another_mouse_eat;
++
++	/*first */	
++	
++
++
++
+         /*
+          * Avoid unused variable warnings.
+          */
+diff --git a/kern/asst1/catsem.c b/kern/asst1/catsem.c
+index dcb257b..3a32950 100644
+--- a/kern/asst1/catsem.c
++++ b/kern/asst1/catsem.c
+@@ -26,6 +26,31 @@
+  *
+  */
+ 
++volatile bool all_dishes_available = true;
++
++static struct semaphore *done; //init:  0
++static struct semaphore *mutex; //init: 1
++static struct semaphore *dish_mutex; //init: 1
++
++/*cats*/
++static struct semaphore *cats_queue; //init: 0
++volatile int cats_wait_count = 0;
++volatile bool no_cat_eat = true;	//first cat
++
++/*mice*/
++static struct semaphore *mice_queue; //init: 0
++volatile int mice_wait_count = 0;
++volatile bool no_mouse_eat = true;
++
++/*dishes*/
++volatile bool dish1_busy = false;
++volatile bool dish2_busy = false;
++volatile int mydish;
++
++/*cat and mouse array of names*/
++static const string *catName[NCATS] = {"cat1", "cat2", "cat3", "cat4",
++				"cat5", "cat6"};
++static const string *miceName[NMICE] = {"mouse1", "mouse2"};
+ /*
+  * Number of food bowls.
+  */
+@@ -46,6 +71,85 @@
+ 
+ 
+ /*
++ *
++ *Initalize semaphores
++ *&
++ *
++ *Destroy semaphores
++ *
++ */
++
++/*
++ *sem_init()
++ *
++ * initalizes all semaphores
++ *
++ *no arguments
++ *no retuns
++ *
++ */
++static
++void
++sem_init()
++{
++	done = sem_create("done", 0);
++	if (done == NULL)	{
++		panic ("done: Out of memory. \n");
++	}
++
++	mutex = sem_create("mutex", 1);
++	if (mutex == NULL)	{
++		panic ("mutex: Out of memory. \n");
++	}
++	
++	dish_mutex = sem_creat("dish mutex", 1);
++	if (dish_mutex == NULL)	{
++		panic ("dish_mutex: Out of memory. \n");
++	}
++	
++	cats_queue = sem_create("cats queue", 0);
++	if (cats_queue == NULL)	{
++		panic ("cats_queue: Out of memory. \n");
++	}	
++
++	mice_queue = sem_create("mice queue, 0");
++	if (mice_queue == NULL)	{
++		panic ("mice_queue: Out of memory. \n");
++	}
++}
++
++/*
++ *destruct()
++ *
++ *destroys semaphores
++ *
++ * no arguments
++ *no returns
++ *
++ *
++ */
++static
++void
++destruct()	
++{
++	sem_destroy(done);
++	done = NULL;
++	
++	sem_destroy(mutex);
++	mutex = NULL;
++	
++	sem_destroy(dish_mutex);
++	dish_mutex = NULL;
++	
++	sem_destroy(cats_queue);
++	cats_queue = NULL;
++	
++	sem_destroy(mice_queue);
++	mice_queue = NULL;
++
++}
++
++/*
+  * 
+  * Function Definitions
+  * 
+@@ -72,12 +176,107 @@ void
+ catsem(void * unusedpointer, 
+        unsigned long catnumber)
+ {
++	/* local variables*/
++	volatile bool first_cat_eat;
++	volatile bool another_cat_eat;
++
++	/*first cat no mice*/
++	lock_acquire(mutex);
++	if (all_dishes_avaliable)	{
++		all_dishes_avaliable = false;
++		lock_release(cat_queue);	//signal cats_queue to let first cat in
++	}
++	cat_wait_count++;
++	lock_release(mutex);
++	
++	//first cat comes in
++	lock_acquire(cats_queue);
++	if (no_cat_eat)	{
++		no_cat_eat = false;
++		first_cat_eat = true;
++	}
++	else	{
++		first_cat_eat = false;
++	}
++	
++	//first cat controls kitcen
++	if (first_cat_eat == true)	{
++		lock_acquire(mutex);
++		if (cat_wait_count > 1)	{
++			another_cat_eat = true;
++			lock_release(cats_queue); // let another cat in
++		}
++		lock_release(mutex);
++	}
++	kprintf("%s in the kitchen. \n", catName[catnumber]);
++
++	/*all cats (first cta and non-firstcat) in the kitchen*/
++	lock_acquire(dish_mutex);
++	if (dish1_busy == false)	{
++		dish1_busy = true;
++		mydish = 1;
++	}
++	else	{
++		assert (dish2_busy == false);
++		dish2_busy = true;
++		mydish = 2;
++	}
++	lock_release(dish_mutex);
++	kprintf("%s is eating. \n", catName[catnumber]);
++	clocksleep(1);
++	kprintf("%s is finished  eating. \n", catName[catnumber]);
++
++	/*All cats release dishes*/
++	lock_acquire(dish_mutex);
++	if (mydish == 1)
++		dish1_busy = false;
++	else
++		dish2_busy = false;
++	lock_release(dish_mutex);
++	
++
++	lock_acquire(mutex);
++		cat_wait_count--;
++	lock_release(mutex);
++ 
++	
++	/*first cat leaves kitchen*/
++	if (first_cat_eat == true)	{
++		if (another_cat_eat == true)	{
++			lock_acquire(done);
++		}
++	
++		kprintf("First cat, %s, is leaving. \n", catName[catnumber]);
++		no_cat_eat = true;
++	
++		/*wake up mice if any waiting*/
++		if (mice_wait_count > 0)	{
++			lock_release(mice_queue);
++		}
++	
++		/*wake up cats if any waiting*/
++		else if (cats_wait_count > 0)	{
++			lock_release(cats_queue);
++		}
++
++		/*nobody waiting*/
++		else	{
++			lock_acquire(mutex);
++			all_dishes_avaliable = true;
++			lock_release(mutex);
++		}
++	}
++	else	{
++		lock_release(done);
++	}
++
++	
+         /*
+          * Avoid unused variable warnings.
+          */
+ 
+-        (void) unusedpointer;
+-        (void) catnumber;
++       (void) unusedpointer;
++       (void) catnumber;
+ }
+         
+ 
+@@ -99,15 +298,110 @@ catsem(void * unusedpointer,
+ 
+ static
+ void
+-mousesem(void * unusedpointer, 
++mousesem(void * unusedpointed,, 
+          unsigned long mousenumber)
+ {
++	/*local variables*/
++	volatile bool first_mouse_eat;
++	volatile bool another_mouse_eat;
++	
++	
++	lock_acquire(mutex);
++	if(all_dishes_avaliable)	{
++		all_dishes_avaliable = false;
++		lock_release(mice_queue);
++	}	
++	
++	mice_wait_count++;
++	lock release(mutex);
++	
++	/*first mouse comes in*/
++	lock_acquire(mice_queue);
++	if (no_mouse_eat)	{
++		no_mouse_eat = false;
++		first_mouse_eat = true;
++	}
++	else	{
++		first_mouse_eat = false;
++	}
++
++	/*first mouse controls kitchen*/
++	if (first_mouse_eat)	{
++		lock_acquire(mutex);
++		if (mice_wait_count > 0)	{
++			another_mouse_eat= true;	
++			lock_release(mice_queue);
++		}
++		lock_release(mutex);		
++	}	
++	kprintf("%s is in the kitchen. \n", miceName[mousenumber]);
++	
++
++	/*both mice in kitchen*/
++	
++	lock_acquire(dish_mutex);
++	if (dish1_busy == false)	{
++		dish1_busy = true;
++		mydish = 1;
++	}
++	else	{ 
++		assert (dish2_busy == false);
++		dish2_busy = true;
++		mydish = 2;
++	}
++	lock_release(dish_mutex);
++	
++	kprintf("%s is eating. \n", miceName[mousenumber]);
++	clocksleep(1);
++	kprintf("%s has finished eating. \n", miceName[micenumber]);
++	
++	/*release dishes*/
++	lock_acquire(dish_mutex);
++	if (mydish == 1)	{
++		dish1_busy = false;
++	}
++	else	{
++		dish2_busy = false;
++	}
++	lock_release(dish_mutex);
++	
++	lock_acquire(mutex);
++		mice_wait_count--;
++	lock_release(mutex);
++	
++	/*leave kitchen*/
++	if (first_mouse_eat == true)	{
++		if (another_mouse_eat == true)	{	
++			lock_acquire(done);
++		}	
++	
++		kprintf("%s is leaving. \n", miceName[mouseNumber]);
++		no_cat_eat = true;
++
++		lock_acquire(mutex);
++	
++		/*switch to cats if any waiting*/
++		if (cats_wait_count > 0)	{
++			lock_release(cats_queue);
++		}
++	
++		else if (mice_wait_count > 0)	{
++			lock_release(mice_queue);
++		}
++		else	{
++			all_dishes_available = true;
++		}
++		lock_release(mutex);
++	}
++	else	{
++		lock_release(done);
++	}
+         /*
+          * Avoid unused variable warnings.
+          */
+ 
+-        (void) unusedpointer;
+-        (void) mousenumber;
++       (void) unusedpointer;
++       (void) mousenumber;
+ }
+ 
+ 
+@@ -131,7 +425,13 @@ catmousesem(int nargs,
+             char ** args)
+ {
+         int index, error;
+-   
++ 	
++	/*
++	 *initalize
++	 * 
++	 */	
++	sem_init();
++  
+         /*
+          * Avoid unused variable warnings.
+          */
+@@ -142,16 +442,18 @@ catmousesem(int nargs,
+         /*
+          * Start NCATS catsem() threads.
+          */
+-
+-        for (index = 0; index < NCATS; index++) {
++	index = 0;
++        while (index < NCATS) {
+            
+                 error = thread_fork("catsem Thread", 
+                                     NULL, 
+-                                    index, 
++                                    catnumber, 
+                                     catsem, 
+                                     NULL
+                                     );
+                 
++		result = thread_fork("catsem result thread",
++					NULL, catnumber, catsem, NULL);
+                 /*
+                  * panic() on error.
+                  */
+@@ -162,21 +464,24 @@ catmousesem(int nargs,
+                               strerror(error)
+                               );
+                 }
+-        }
++        	
++		_
++	}
+         
+         /*
+          * Start NMICE mousesem() threads.
+          */
+-
+-        for (index = 0; index < NMICE; index++) {
+-   
++	index = 0;
++        //for (index = 0; index < NMICE; index++) {
++   	while (index < NMICE)	{
+                 error = thread_fork("mousesem Thread", 
+                                     NULL, 
+-                                    index, 
++                                    mousenumber, 
+                                     mousesem, 
+                                     NULL
+                                     );
+-                
++                result = thread_fork("mousesem result Thread",
++					NULL, mousenumber, mousesem, NULL);
+                 /*
+                  * panic() on error.
+                  */
+@@ -188,7 +493,13 @@ catmousesem(int nargs,
+                               );
+                 }
+         }
+-
++	
++	/*
++	 *
++	 *destroy semaphores
++	 *
++	 */
++	destruct();
+         return 0;
+ }
+ 

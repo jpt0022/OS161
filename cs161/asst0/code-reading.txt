@@ -1,0 +1,26 @@
+Jessica Tomas
+
+1. $29
+2. lamebus
+3. splhigh disables interrupts while spl0 sets spl to 0 enabling all interrupts
+4. to distinguish between unsigned and signed integers and also because the way gcc implements 64 bit arithmetic on 32 bit processers
+5. splx returns the old interrupt state
+6. splhigh
+7. HZ times
+8. con_open, con_close, con_io, con_ioct1, attach_console_to_vfs
+9. 32
+10. 15
+11. fs_sync, fs_getvolname, fs_getroot, fs_unmount
+12. thread_sleep
+13. 6
+14. vop_open, vop_close, vop_reclaim, vop_read, vop_readlink, vop_getdirentry, vop_write, vop_ioct1, vop_stat, vop_gettype, vop_tryseek, vop_fsync, vop_mmap, vop_truncate, vop_namefile, vop_creat, cop_symlink, vop_mkdir, vop_link, vop_remove, vop_rmdir, vop_rename, vop_lookup, vop_lookparent
+15. 1024
+16. 0
+17. ~/cs161/src/kern/include/kern/unistd.h
+18. Yes because the scheduler creates the run queue not initalize it
+19. Zombies are threads/processes that have exited but not been fully deleted yet
+20. 32
+21. "device:"
+22. with "raw" at the end of the name (example: lhd0raw)
+23. vn_countlock
+24. block and character devices

@@ -1,0 +1,42 @@
+Script started on Thu 12 Sep 2019 10:11:58 PM CDT
+[?1034hbash-4.2$ cd cs161/root
+bash-4.2$ ./sys161 kernel
+sys161: System/161 release 1.14, compiled Sep 10 2019 16:32:31
+
+OS/161 base system version 1.10
+Copyright (c) 2000, 2001, 2002, 2003
+   President and Fellows of Harvard College.  All rights reserved.
+
+Put-your-group-name-here's system version 0 (ASST0 #1)
+
+Cpu is MIPS r2000/r3000
+1872k physical memory available
+Device probe...
+lamebus0 (system main bus)
+emu0 at lamebus0
+ltrace0 at lamebus0
+ltimer0 at lamebus0
+hardclock on ltimer0 (100 hz)
+beep0 at ltimer0
+rtclock0 at ltimer0
+lrandom0 at lamebus0
+random0 at lrandom0
+lser0 at lamebus0
+con0 at lser0
+pseudorand0 (virtual)
+
+OS/161 kernel [? for menu]: p /sbin/poweroff<return>
+Operation took 0.000176720 seconds
+OS/161Running program è¬ failed: No such file or directory
+ kernel [? for menu]: p /sbin/poweroff
+Operation took 0.000185200 seconds
+OS/161 kernel [? for menu]: Shutting down.
+The system is halted.
+sys161: 703775656 cycles (7150717k, 18u, 696624921i)
+sys161: 3586 irqs 6 exns 0r/0w disk 42r/799w console 8r/0w/3m emufs 0r/0w net
+sys161: Elapsed real time: 28.135752 seconds (25.0136 mhz)
+sys161: Elapsed virtual time: 28.151026240 seconds (25 mhz)
+bash-4.2$ exit
+exit
+
+Script done on Thu 12 Sep 2019 10:12:45 PM CDT

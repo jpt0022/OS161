@@ -1,0 +1,15 @@
+Jessica Tomas
+jpt0022
+project3
+
+
+1. When a thread exits parts of the thread structure are cleaned up that do not need to run right away. It asserts the stack then sets curthread parts to null and switches thread to zombie. When a thread sleeps it yields the cpu to another process and goes to sleep on its sleep address. It enters sleep state and its only waken up when called to wakeup.
+2. mi_switch()
+3. four states - S_RUN, S_READY, S_SLEEP, S_ZOMB
+4. Turning off interrupts turns off hardware and software interrupts. This is done by calling splhigh(). This is important to make sure functions are not inerrupted mid execution from hardware which can cause problems.
+5. it removes it from the queue and calls make_runnable on it. It runs again when mi_switch is called
+6. struct thread *scheduler(void)
+7. it uses aa runqueue that returns the next thread to run. calls cpu_idle() if there is nothing ready
+8. the hardware time forces a context switch. when thread_yield is called a context switch is forced
+9. thread_sleep implements P function and thread_wakeup implements V function. the argument passed to thread_sleep is the address of the semaphore the sleeping thread is associated with so it knows which thread to wakeup.
+10. The only person who can unlock the lock is the person who locked it so lock_get_holer cannot be implemented

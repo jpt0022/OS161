@@ -1,0 +1,4 @@
+Jessica Tomas
+jpt0022
+
+For project 4 I used option 1, the catsem.c implementation. To avoid starvation in my program the function catsem() calls the mouse queue to wakeup the mice while the mousesem() calls the cat queue to wake up the cats. This allows for the cats or the mice to enter the kitchen once one spieces is done which keeps the mice or the cats from straving. The Cats-and-Mice program allowed me to see the way multiple semaphores can work together to protect different shared variables during synchronized processes. The use to different semaphores to protect different items such as dish_mutex and both the queues made it easy to distingush what needed to be protected when and where in the implementation.
